@@ -16,6 +16,7 @@ class DigitalTwinEngine:
         self.model_version = "v1.0"
         
         self.load_models()
+        self.initialize_baseline()
         
     def load_models(self):
         base_dir = os.path.join(os.path.dirname(__file__), '..', '..')
@@ -31,6 +32,20 @@ class DigitalTwinEngine:
             self.anomaly_model = None
             self.rul_model = None
             self.features = []
+
+    def initialize_baseline(self):
+        base_dir = os.path.join(os.path.dirname(__file__), '..', '..')
+        data_file = os.path.join(base_dir, 'data', 'test_preprocessed.csv')
+        if os.path.exists(data_file):
+            try:
+                df = pd.read_csv(data_file)
+                for eng_id, unit_n in [("ENGINE_001", 1), ("ENGINE_002", 2), ("ENGINE_003", 3)]:
+                    sub = df[df['unit_number'] == unit_n]
+                    if not sub.empty:
+                        first_row = sub.iloc[0]
+                        self.update_state(eng_id, int(first_row['time_cycles']), first_row)
+            except Exception as e:
+                print(f"Baseline init warning: {e}")
 
     def _determine_status(self, health_index: float, anomaly_flag: bool) -> str:
         if health_index < 40:
